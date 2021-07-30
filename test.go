@@ -2,23 +2,35 @@ package main
  
 import (
     "fmt"
-    "io/ioutil"
-    "net/http"
 )
  
 func main() {
-    // GET 호출
-    resp, err := http.Get("https://news.naver.com/main/list.naver?mode=LS2D&mid=shm&sid1=100&sid2=264")
-    if err != nil {
-        panic(err)
-    }
- 
-    defer resp.Body.Close()
- 
-    // 결과 출력
-    data, err := ioutil.ReadAll(resp.Body)
-    if err != nil {
-        panic(err)
-    }
-    fmt.Printf("%s\n", string(data))
+
+    var a [3]int
+    a[0] = 1
+    a[1] = 2
+    a[2] = 3
+
+    fmt.Println(a[0],a[1],a[2])
+
+    aa(&a[2])
+
+    fmt.Println(a[2])
+
+    b := make([]string,0,2)
+    fmt.Println(len(b))
+    b=append(b,"aa")
+    fmt.Println(len(b))
+    b=append(b,"bb")
+    fmt.Println(len(b))
+    fmt.Println(b)
+
+}
+
+func aa(s *int){
+    
+    *s = 3
+
+    fmt.Println(*s)
+
 }
