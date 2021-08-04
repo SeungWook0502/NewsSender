@@ -6,8 +6,14 @@ import (
     "strings"
     "io/ioutil"
     // "reflect"
+    "time"
+    "database/sql"
+    "log"
 
+    _ "github.com/go-sql-driver/mysql"
     "github.com/PuerkitoBio/goquery"
+    "golang.org/x/text/encoding/korean"
+    "golang.org/x/text/transform"
 )
 
 // go mod init이 선행되어야
@@ -40,8 +46,44 @@ func main() {
         }
     }
 
-    fmt.Println(len(article_tot[0].title))
+    // fmt.Println(len(article_tot[0].title))
+    // for i:=0;i<20;i++{
+    //     fmt.Println(i,"-",len(article_tot[0].title),article_tot[0].title[i])
+    //     fmt.Println(i,"-",len(article_tot[0].url),article_tot[0].url[i])
 
+    // }
+    set_article(article_tot[0])
+
+}
+
+func set_article(article article_sid){
+
+    db, err := sql.Open("mysql", "root:12341234@tcp(127.0.0.1:3306)/go_article")
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer db.Close()
+    
+    var response string
+    article_time := time.Now().Format("2006-01-02 15:04:05")
+    text := "INSERT INTO article (article_title. article_url,  article_sidnum, article_day) value (\""+article.title[0]+"\",\""+article.url[0]+"\",\""+article.sidnum2+"\",\""+article_time+"\")"
+    
+    got, _, err := transform.String(korean.EUCKR.NewEncoder(), article.title[0])
+    if err != nil {
+        fmt.Println("Encoding euc-kr")
+        panic(err)
+    }
+
+    fmt.Println(text,got)
+    err = db.QueryRow("INSERT INTO article (article_title, article_url,  article_sidnum, article_day) value (\""+got+"\",\""+article.url[0]+"\",\""+article.sidnum2+"\",\""+article_time+"\")").Scan(&response)
+
+    
+    if err != nil {
+        fmt.Println("query")
+        log.Fatal(err)
+    }
+
+    fmt.Println(response)
 
 }
 
@@ -52,23 +94,25 @@ func get_article(sidnum2 string)([]string, []string){
 
     response, err := http.Get(target_url)
     if err != nil {
-        fmt.Println("1")
+        fmt.Println("http.Get")
         panic(err)
     }
     defer response.Body.Close()
 
     if response.StatusCode != 200 {
-        fmt.Println("2")
+        fmt.Println("Status Code")
         panic(response.StatusCode)
     }
     // 결과 출력
     data, err := ioutil.ReadAll(response.Body)
     if err != nil {
+        fmt.Println("Read document")
         panic(err)
     }
 
     data2, err := goquery.NewDocumentFromReader(strings.NewReader(string(data)))
     if err != nil{
+        fmt.Println("Stream document")
         panic(err)
     }
 
@@ -77,12 +121,12 @@ func get_article(sidnum2 string)([]string, []string){
 
     data2.Find(".list_body dt a").Each(func(i int, s *goquery.Selection) {
         
-        replacer := strings.NewReplacer("\t","","\n","")
+        replacer := strings.NewReplacer("\t","","\n","","\"","'","···","")
 
         title := s.Text()
         title = replacer.Replace(title)
-        if len(title) != 1{
-            article_title = append(article_title,title)
+        if len(title) != 1 && len(title) != 10 {
+            article_title = append(article_title,strings.Replace(title," ","",1))
         }
 
         url, _ := s.Attr("href")
